@@ -1,0 +1,33 @@
+configuration: Release
+
+version: 1.0.{build}
+
+# netstandard2.0 lib, but Npgsql 8 + Microsoft.SemanticKernel.Connectors.Postgres
+# 1.8.0-alpha need a modern SDK to restore — use the 2022 image.
+image: Visual Studio 2022
+
+build:
+    parallel: true
+    publish_nuget: true
+    verbosity: minimal
+
+before_build:
+  - dotnet restore
+
+# Library repo — no CI tests (the PostgreSQLTests project is integration-only and
+# stays out of the solution / repo).
+test: off
+
+branches:
+    only:
+      - main
+
+deploy:
+  provider: NuGet
+  server: https://ci.appveyor.com/nuget/tachyon1337-mrxqao6t197e
+  api_key:
+    # Account-scoped encrypted feed key (same value the published Plunk repos use).
+    # If a push returns 401, this needs re-encrypting from the current feed key.
+    secure: 77VoJopJzeflBblhONXBNYwMWlQ4C1dAgaWjGXKfJgc=
+  skip_symbols: false
+  artifact: /.*\.nupkg/
