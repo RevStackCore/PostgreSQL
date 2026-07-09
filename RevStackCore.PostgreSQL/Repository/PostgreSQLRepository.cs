@@ -19,7 +19,8 @@ namespace RevStackCore.PostgreSQL.Repository
         private readonly TypedClient<TEntity, NpgsqlConnection, TKey> _typedClient;
         public PostgreSQLRepository(PostgreSQLDbContext context)
         {
-            _typedClient = new TypedClient<TEntity, NpgsqlConnection, TKey>(context.ConnectionString, SQLLanguageType.PostgreSQL);
+            var connectionString = context.ConnectionString.Replace("Search Path=public", "Search Path=" + context.Tenant);
+            _typedClient = new TypedClient<TEntity, NpgsqlConnection, TKey>(connectionString, SQLLanguageType.PostgreSQL);
         }
 
         public TEntity Add(TEntity entity)
@@ -124,6 +125,7 @@ namespace RevStackCore.PostgreSQL.Repository
                 return _typedClient.Db;
             }
         }
+
     }
 }
 

@@ -8,8 +8,9 @@ using Npgsql;
 using Dapper;
 using System.Linq;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+//using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using System.Text;
+using RevStackCore.Extensions.SQL;
 
 namespace RevStackCore.PostgreSQL
 {
@@ -17,6 +18,7 @@ namespace RevStackCore.PostgreSQL
     {
         private readonly string _connectionString;
         private readonly string _type;
+        //private readonly string _tenant;
         public PostgreSQLBulkClient(string connectionString)
         {
             _connectionString = connectionString;
@@ -39,6 +41,25 @@ namespace RevStackCore.PostgreSQL
             }
         }
 
+        public static string GetColumnNamesWithAttributes()
+        {
+            var entityType = typeof(TEntity);
+            var properties = entityType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            if (properties.Length == 0)
+                throw new ArgumentException("The entity type must have at least one public property.");
+
+            var columnNames = properties.Select(p =>
+            {
+                var columnAttribute = p.GetCustomAttribute<ColumnAttribute>(true);
+                return columnAttribute != null && !string.IsNullOrEmpty(columnAttribute.Name)
+                    ? columnAttribute.Name
+                    : p.Name.ToLower();
+            });
+
+            return string.Join(", ", columnNames);
+        }
+
         public async Task<int> BulkInsert(IEnumerable<TEntity> entities)
         {
             int insertedCount = 0;
@@ -49,16 +70,20 @@ namespace RevStackCore.PostgreSQL
             if (properties.Length == 0)
                 throw new ArgumentException("The entity type must have at least one public property.");
 
-            var columnNames = string.Join(", ", properties.Select(p => p.Name.ToLower()));
+            //var columnNames = string.Join(", ", properties.Select(p => p.Name.ToLower()));
+            var columnNames = GetColumnNamesWithAttributes();
 
             var connection = new NpgsqlConnection(_connectionString);
 
             using (NpgsqlConnection db = connection)
             {
+                if (db.State == ConnectionState.Closed)
+                {
+                    db.Open();
+                }
+
                 using (var writer = db.BeginBinaryImport($"COPY {_type} ({columnNames}) FROM STDIN (FORMAT BINARY)"))
                 {
-                    
-
                     foreach (var entity in entities)
                     {
                         await writer.StartRowAsync().ConfigureAwait(false);
@@ -98,6 +123,11 @@ namespace RevStackCore.PostgreSQL
 
             using (NpgsqlConnection db = connection)
             {
+                if (db.State == ConnectionState.Closed)
+                {
+                    db.Open();
+                }
+
                 using (var writer = db.BeginBinaryImport($"COPY {tempTableName} ({"id".ToLower()}, {columnNames}) FROM STDIN (FORMAT BINARY)"))
                 {
                     foreach (var entity in entities)
@@ -135,13 +165,26 @@ namespace RevStackCore.PostgreSQL
 
         public Task<int> BulkDelete()
         {
-            var connection = new NpgsqlConnection(_connectionString);
-            using (NpgsqlConnection db = connection)
+            try
             {
-                string sql = "Delete From " + _type;
-                var query = db.Execute(sql);
-                return Task.FromResult(query);
+                var connection = new NpgsqlConnection(_connectionString);
+                using (NpgsqlConnection db = connection)
+                {
+                    if (db.State == ConnectionState.Closed)
+                    {
+                        db.Open();
+                    }
+
+                    string sql = "Delete From " + _type;
+                    var query = db.Execute(sql);
+                    return Task.FromResult(query);
+                }
             }
+            catch (Exception ex)
+            {
+            }
+
+            return Task.FromResult(0);
         }
 
         private NpgsqlTypes.NpgsqlDbType GetNpgsqlDbType(Type type)
@@ -156,6 +199,11 @@ namespace RevStackCore.PostgreSQL
                 return NpgsqlTypes.NpgsqlDbType.Timestamp;
             if (type == typeof(double))
                 return NpgsqlTypes.NpgsqlDbType.Double;
+            if (type == typeof(decimal))
+                return NpgsqlTypes.NpgsqlDbType.Numeric;
+            if (type == typeof(Single))
+                return NpgsqlTypes.NpgsqlDbType.Real;
+
             // Add more type mappings as needed
             throw new NotSupportedException($"Type {type.Name} is not supported.");
         }

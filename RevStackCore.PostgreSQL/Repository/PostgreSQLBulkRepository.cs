@@ -18,8 +18,9 @@ namespace RevStackCore.PostgreSQL.Repository
         private readonly PostgreSQLBulkClient<TEntity> _bulkClient;
         public PostgreSQLBulkRepository(PostgreSQLDbContext context)
         {
-            _typedClient = new TypedClient<TEntity, NpgsqlConnection, TKey>(context.ConnectionString, SQLLanguageType.MySQL);
-            _bulkClient = new PostgreSQLBulkClient<TEntity>(context.ConnectionString);
+            var connectionString = context.ConnectionString.Replace("Search Path=public", "Search Path=" + context.Tenant);
+            _typedClient = new TypedClient<TEntity, NpgsqlConnection, TKey>(connectionString, SQLLanguageType.PostgreSQL);
+            _bulkClient = new PostgreSQLBulkClient<TEntity>(connectionString);
         }
 
         public TEntity Add(TEntity entity)
