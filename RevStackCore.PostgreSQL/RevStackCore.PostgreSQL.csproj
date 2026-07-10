@@ -3,6 +3,10 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <PackageId>RevStackCore.PostgreSQL</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Authors>David Sheets, S. Francis</Authors>
+    <Description>Plunk fork of RevStackCore.PostgreSQL (netstandard2.0) with pgvector vector-store support.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
