@@ -24,9 +24,9 @@ branches:
 
 deploy:
   provider: NuGet
-  # Same as the other RevStackCore repos: no explicit server (account default feed)
-  # + the RevStackCore-account key that MySQL/MySQL.BulkInsert publish with.
+  # No explicit server (account default feed), like the other RevStackCore repos.
+  # Encrypted (AppVeyor "Encrypt YAML") form of the newly-generated feed key.
   api_key:
-    secure: PcXqIhdC7ZETvlKSX4Zd5kgSp8OoLl59L1T5S9QLuYY=
+    secure: 508iP//ZlumWc1i56jve5XnZXQGZl9Fzd9s+oHJt1GEiIvchqg/Eb/0u2e3X2/a8
   skip_symbols: false
   artifact: /.*\.nupkg/
