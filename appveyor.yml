@@ -24,10 +24,9 @@ branches:
 
 deploy:
   provider: NuGet
-  server: https://ci.appveyor.com/nuget/tachyon1337-mrxqao6t197e
+  # Same as the other RevStackCore repos: no explicit server (account default feed)
+  # + the RevStackCore-account key that MySQL/MySQL.BulkInsert publish with.
   api_key:
-    # Account-scoped encrypted feed key (same value the published Plunk repos use).
-    # If a push returns 401, this needs re-encrypting from the current feed key.
-    secure: 77VoJopJzeflBblhONXBNYwMWlQ4C1dAgaWjGXKfJgc=
+    secure: PcXqIhdC7ZETvlKSX4Zd5kgSp8OoLl59L1T5S9QLuYY=
   skip_symbols: false
   artifact: /.*\.nupkg/
